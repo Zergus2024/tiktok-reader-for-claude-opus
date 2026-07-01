@@ -1,0 +1,14 @@
+[package]
+name = "tiktok-reader"
+version = "0.1.0"
+edition = "2021"
+description = "Turn a TikTok (or any yt-dlp URL) into frames + a transcript an LLM can actually read. Built for Claude Opus."
+license = "MIT"
+repository = "https://github.com/Zergus2024/tiktok-reader-for-claude-opus"
+
+[[bin]]
+name = "tiktok-reader"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 2

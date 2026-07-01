@@ -1,0 +1,8 @@
+/target
+tr_out/
+clip/
+*.mp4
+*.wav
+*.jpg
+__pycache__/
+*.pyc
