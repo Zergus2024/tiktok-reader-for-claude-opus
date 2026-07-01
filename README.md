@@ -73,6 +73,20 @@ A small local model (via [ollama](https://ollama.com)) reads the whole transcrip
 
 **Grounding guard.** The digest step is instructed to *quote, not invent*: use only the transcript, keep timestamps, mark garbled lines `[unclear]`. And the full `transcript.txt` stays on disk as the **anchor** — if the composer needs to verify or the digest looks thin, the source is right there. That's the difference between a cheap cascade and a game of telephone: the small model *retrieves*, it doesn't *hallucinate a summary*.
 
+## Caveats — not every model can compress a video
+
+The `--digest` cascade is only as good as the small model doing the compressing. **A model too weak for the content will distort it**, and then the frontier model composes a confident answer on a wrong premise.
+
+Real example from this repo's first test: a 90-second clip where the speaker argues *against* relying on a single prompt (he builds a multi-bot pipeline instead). A 1.5B model asked to "summarize the argument" returned the **opposite** — it reported the speaker's thesis as *"a good prompt leads to the correct behavior."* Backwards. That is exactly the failure this tool is built to avoid, so:
+
+- The digest prompt was changed from *summarize* to **select verbatim lines** — retrieval, not interpretation. A small model can reliably *copy* the key lines even when it can't *reason* about them.
+- The full `transcript.txt` always stays on disk as the **anchor**. If a digest looks thin or off, the composer reads the source.
+- If in doubt, **skip `--digest`** and hand the frontier model the raw `transcript.txt` + `frames/` directly. No compression, no distortion.
+
+Rules of thumb: use a capable-enough digest model (a 3B–7B handles nuance far better than a 1.5B), watch out for cross-lingual/accented audio (transcription noise compounds), and treat the cascade as an *optimization*, not a *source of truth*.
+
+**But even at its worst, this beats nothing.** An LLM can't watch a video at all. With this tool it gets frames it can see and a transcript it can read — with or without the cascade. The digest is a bonus that saves budget; the frames + transcript are the floor, and the floor is already a capability the model didn't have.
+
 ## Notes
 
 - Zero external Rust crates — pure `std`, just orchestrates `yt-dlp` / `ffmpeg` / a small whisper helper.
