@@ -55,6 +55,24 @@ tiktok-reader "https://www.tiktok.com/@user/video/123..." -o clip -i 5 -m small
 
 Then hand `clip/frames/` and `clip/transcript.txt` to the model.
 
+## Cascade: let a small local model do the reading (`--digest`)
+
+You don't need a frontier model to *extract* — only to *compose the final answer*. So chain them:
+
+```
+video ──▶ frames + transcript ──▶ [small LOCAL model] ──▶ grounded digest ──▶ [frontier model] ──▶ answer
+                                    cheap, on your box                         reads the digest, not the raw
+```
+
+```bash
+tiktok-reader "<URL>" -o clip --digest --digest-model qwen2.5:1.5b
+# -> clip/digest.txt   (compact, quote-based extract)
+```
+
+A small local model (via [ollama](https://ollama.com)) reads the whole transcript and emits a compact digest — topic, key points as `[timestamp] "verbatim quote"`, and the speaker's main claim. The **frontier model then reads the digest, not the raw transcript + 18 frames**, so it spends a fraction of the budget.
+
+**Grounding guard.** The digest step is instructed to *quote, not invent*: use only the transcript, keep timestamps, mark garbled lines `[unclear]`. And the full `transcript.txt` stays on disk as the **anchor** — if the composer needs to verify or the digest looks thin, the source is right there. That's the difference between a cheap cascade and a game of telephone: the small model *retrieves*, it doesn't *hallucinate a summary*.
+
 ## Notes
 
 - Zero external Rust crates — pure `std`, just orchestrates `yt-dlp` / `ffmpeg` / a small whisper helper.
